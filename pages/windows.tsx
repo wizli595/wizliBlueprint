@@ -43,11 +43,11 @@ export default function WindowsPage() {
           <div className="Project"><p data-value="demo">demo</p></div>
         </div>
 
-        <Script src="/Scripts/ModelFiles.js" strategy="afterInteractive" />
-        <Script src="/Scripts/RenderingFunctions.js" strategy="afterInteractive" />
-        <Script src="/Scripts/TerminalFunction.js" strategy="afterInteractive" />
+        <Script src="/Scripts/ModelFiles.js" strategy="beforeInteractive" />
+        <Script src="/Scripts/RenderingFunctions.js" strategy="beforeInteractive" />
+        <Script src="/Scripts/TerminalFunction.js" strategy="beforeInteractive" />
         {/* Ensure GetText exists to avoid runtime ReferenceError in Main.js */}
-        <Script id="gettext-shim" strategy="afterInteractive">{`(function(){
+        <Script id="gettext-shim" strategy="beforeInteractive">{`(function(){
           if(typeof window.GetText !== 'function'){
             window.GetText = function(){ return ""; };
           }

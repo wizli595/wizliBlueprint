@@ -17,7 +17,7 @@ const Banner: React.FC = () => {
       <div className="banner-info">
         <div className="banner-line"><strong>abdessalam ouazri</strong> — Systems Engineer & DevOps</div>
         <div className="banner-line">Location: Remote • Based on Linux</div>
-        <div className="banner-line">Email: hello@wizli.dev • GitHub: github.com/abdessalamouazri</div>
+        <div className="banner-line">Email: hello@wizli.dev • GitHub: github.com/wizli595</div>
         <div className="banner-line">Type 'help' to list available commands</div>
       </div>
     </div>
