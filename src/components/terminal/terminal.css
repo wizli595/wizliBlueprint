@@ -1,0 +1,120 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap");
+
+:root{--fg:#00ff88;--accent:#ffd66b}
+
+.terminal-wrapper{
+  height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#060606;
+}
+
+.terminal-centered{
+  width:100%;
+  max-width:1100px; /* slightly narrower for a compact linuxy look */
+  padding:18px 40px;
+  box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.terminal-card{
+  width:100%;
+  min-height: 380px;
+  max-height: 80vh;
+  background:#000;
+  color:var(--fg);
+  padding:16px 18px;
+  box-shadow:0 18px 60px rgba(0,0,0,0.7);
+  border-radius:6px;
+  position:relative;
+  overflow:auto;
+  font-family: 'Roboto Mono', monospace;
+  font-size:13px;
+}
+
+.terminal-card::before{content:none}
+
+.banner-ascii{white-space:pre;font-family: 'Roboto Mono', monospace; color:#98ffb8; margin:6px 0 8px 0; z-index:2; font-size:clamp(10px, 2.0vw + 8px, 20px); letter-spacing:1px; overflow:auto; max-width:100%}
+.banner-ascii{ text-shadow: 0 0 10px rgba(0,255,150,0.06), 0 1px 0 rgba(0,0,0,0.6); }
+
+.banner-container{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.banner-sub{color:#98ffb8;font-family:'Roboto Mono',monospace;font-size:12px;opacity:0.9;margin-bottom:6px}
+.banner-info{color:#98ffb8;font-family:'Roboto Mono',monospace;font-size:12px;opacity:0.9;line-height:1.4}
+.banner-info .banner-line{margin:2px 0}
+.lines{z-index:2}
+.typed-line{white-space:pre-wrap;margin-bottom:6px;color:#98ffb8}
+.input-row{display:flex;align-items:center;gap:8px;margin-top:12px;z-index:2}
+.prompt{color:#4af626;font-weight:700;font-family:'Roboto Mono',monospace}
+.input-row input{background:none;border:none;color:var(--fg);font-family:inherit;font-size:1rem;width:100%;outline:none}
+.input-row{padding-right:6px}
+
+/* caret and focus */
+input{caret-color:var(--fg)}
+input:focus{outline:none}
+
+/* topbar */
+.terminal-topbar{height:28px;display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.terminal-dots{display:flex;align-items:center;gap:6px;padding-left:6px}
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+.dot-red{background:#ff5f56}
+.dot-yellow{background:#ffbd2e}
+.dot-green{background:#27c93f}
+
+/* subtle scanlines */
+.terminal-card::after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,0.06) 50%);background-size:100% 2px;mix-blend-mode:multiply;opacity:0.6;pointer-events:none}
+.nprogress-container{position:absolute;left:0;right:0;top:0;height:3px;z-index:20;background:transparent}
+.nprogress-bar{height:100%;background:linear-gradient(90deg,#ffd66b,#ffb84d);width:0%;transition:width 120ms linear;box-shadow:0 0 12px rgba(255,180,60,0.4)}
+
+/* Loader overlay - show immediately and sit above content */
+.loader-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:9999;pointer-events:auto;background:linear-gradient(180deg, rgba(0,0,0,0.85), rgba(0,0,0,0.9));}
+.loader-box{max-width:90%;margin:0 auto;padding:18px 20px;border-radius:8px;background:rgba(0,0,0,0.55);box-shadow:0 12px 40px rgba(0,0,0,0.7);pointer-events:auto}
+.loader-lines{color:var(--accent);font-family:'Roboto Mono',monospace;white-space:pre;margin-bottom:10px;font-size:13px;max-height:8rem;overflow:auto}
+.loader-progress{color:var(--fg);font-family:'Roboto Mono',monospace}
+
+@media (max-width:700px){.terminal-centered{padding:8px}.terminal-card{padding:14px}}
+
+/* Loader overlay styles */
+/* (Duplicate rules removed / consolidated above) */
+
+body {
+  background-color: #333333;
+  height: 100vh;
+  width: 100vw;
+  margin: 0;
+  overflow: hidden;
+}
+
+.TerminalWrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #1e1e1e;
+  color: #ffffff;
+  max-width: 800px;
+  width: 90%;
+  padding: 20px;
+  border-radius: 10px;
+
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.6);
+  font-family: Monaco, Consolas, "Lucida Console", monospace;
+  overflow: auto;
+}
+.TerminalBody {
+  border-radius: 0px 0px 8px 8px;
+}
+.TerminalTitle {
+  background-color: #e0e0e0;
+  color: #333333;
+  font-weight: bold;
+  font-size: 14px;
+  text-align: center;
+  padding: 8px 0;
+  border-radius: 8px 8px 0 0;
+}
+.TerminalPrompt {
+  color: #4af626;
+}
