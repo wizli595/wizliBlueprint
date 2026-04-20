@@ -1,362 +1,346 @@
-import { Router, useRouter } from 'next/router';
-import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { FaWindows, FaLinux, FaFileAlt } from 'react-icons/fa';
+
+const playSound = (src: string, vol = 0.4) => {
+  try { const s = new Audio(src); s.volume = vol; s.play().catch(() => {}); } catch {}
+};
+
+const envs = [
+  { id: 'windows', label: 'Windows', sub: '3D Canvas', path: '/windows', color: '#2d8cf0', Icon: FaWindows },
+  { id: 'linux', label: 'Linux', sub: 'Terminal', path: '/terminal', color: '#8be04b', Icon: FaLinux },
+  { id: 'resume', label: 'Resume', sub: 'Profile', path: '/terminal', color: '#f59e0b', Icon: FaFileAlt },
+];
+
+const TERM_LINES = [
+  '$ systemctl status wizli.service',
+  '● wizli.service - Environment Selector',
+  '   Loaded: loaded (/usr/lib/systemd/system/wizli.service)',
+  '   Active: active (running)',
+  '$ ps aux | grep wizli',
+  'root  1247  0.0  0.1  choosing environment...',
+];
+
+const BOOT_ASCII = `██╗    ██╗██╗███████╗██╗     ██╗
+██║    ██║██║╚══███╔╝██║     ██║
+██║ █╗ ██║██║  ███╔╝ ██║     ██║
+██║███╗██║██║ ███╔╝  ██║     ██║
+╚███╔███╔╝██║███████╗███████╗██║
+ ╚══╝╚══╝ ╚═╝╚══════╝╚══════╝╚═╝`;
+
+// Particles with deterministic positions (no Math.random during render)
+const PARTICLES = Array.from({ length: 30 }, (_, i) => ({
+  left: `${(i * 3.3 + 7) % 100}%`,
+  duration: `${14 + (i % 7) * 3}s`,
+  delay: `${-(i * 1.3)}s`,
+  opacity: 0.12 + (i % 5) * 0.06,
+  size: `${1 + (i % 3)}px`,
+}));
 
 export default function Home() {
-  const [hoveredButton, setHoveredButton] = useState(null);
-  const [terminalLines, setTerminalLines] = useState([]);
+  const [hovered, setHovered] = useState<string | null>(null);
+  const [termLines, setTermLines] = useState<string[]>([]);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [clock, setClock] = useState('');
+  const [navigating, setNavigating] = useState<string | null>(null);
+  const [booting, setBooting] = useState(true);
+  const [bootProgress, setBootProgress] = useState(0);
   const router = useRouter();
+  const rafRef = useRef<number | null>(null);
+  const bootPlayed = useRef(false);
+  const reducedMotion = useReducedMotion();
 
+  const springBouncy = { type: 'spring' as const, stiffness: 260, damping: 20 };
+  const springGentle = { type: 'spring' as const, stiffness: 120, damping: 14 };
+
+  // Boot sequence
   useEffect(() => {
-    const lines = [
-      '$ systemctl status wizli.service',
-      '● wizli.service - Environment Selector',
-      '   Loaded: loaded (/usr/lib/systemd/system/wizli.service)',
-      '   Active: active (running)',
-      '$ ps aux | grep wizli',
-      'root  1247  0.0  0.1  choosing environment...',
-    ];
-    
-    let index = 0;
-    const interval = setInterval(() => {
-      if (index < lines.length) {
-        setTerminalLines(prev => [...prev, lines[index]]);
-        index++;
-      } else {
-        clearInterval(interval);
-      }
-    }, 400);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      setMousePos({ x: e.clientX, y: e.clientY });
+    const play = () => {
+      if (bootPlayed.current) return;
+      bootPlayed.current = true;
+      playSound('/Sounds/ComputerBoot.mp3', 0.4);
+      window.removeEventListener('click', play);
+      window.removeEventListener('keydown', play);
     };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    play();
+    window.addEventListener('click', play);
+    window.addEventListener('keydown', play);
+
+    // Animate boot progress
+    const duration = 2200;
+    const tick = 40;
+    const inc = Math.ceil(100 / (duration / tick));
+    const iv = setInterval(() => {
+      setBootProgress(p => {
+        const next = Math.min(100, p + inc);
+        if (next >= 100) {
+          clearInterval(iv);
+          setTimeout(() => {
+            playSound('/Sounds/ComputerBeep.mp3', 0.3);
+            setBooting(false);
+          }, 400);
+        }
+        return next;
+      });
+    }, tick);
+
+    return () => {
+      clearInterval(iv);
+      window.removeEventListener('click', play);
+      window.removeEventListener('keydown', play);
+    };
   }, []);
 
-  const handleNavigation = (path: string) => {
-    console.log(`Navigating to ${path}`);
-    router.push(path);
+  // Terminal lines (after boot)
+  useEffect(() => {
+    if (booting) return;
+    setTermLines([]);
+    let i = 0;
+    const iv = setInterval(() => {
+      if (i >= TERM_LINES.length) { clearInterval(iv); return; }
+      const l = TERM_LINES[i]; i++;
+      setTermLines(prev => [...prev, l]);
+    }, 400);
+    return () => clearInterval(iv);
+  }, [booting]);
+
+  // Clock (client-only)
+  useEffect(() => {
+    const tick = () => setClock(new Date().toLocaleTimeString('en-US', { hour12: false }));
+    tick();
+    const iv = setInterval(tick, 1000);
+    return () => clearInterval(iv);
+  }, []);
+
+  // Mouse glow
+  const onMouseMove = useCallback((e: MouseEvent) => {
+    if (rafRef.current) return;
+    rafRef.current = requestAnimationFrame(() => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+      rafRef.current = null;
+    });
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('mousemove', onMouseMove);
+    return () => { window.removeEventListener('mousemove', onMouseMove); if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [onMouseMove]);
+
+  const navigate = (path: string, id: string) => {
+    playSound('/Sounds/ComputerBeep.mp3', 0.5);
+    setNavigating(id);
+    setTimeout(() => router.push(path), 600);
+  };
+
+  const onHover = (id: string | null) => {
+    if (id && id !== hovered) playSound('/Sounds/KeyboardPressed.mp3', 0.15);
+    setHovered(id);
   };
 
   return (
-    <div style={styles.container}>
-      <div 
-        style={{
-          ...styles.gradient,
-          background: `radial-gradient(600px at ${mousePos.x}px ${mousePos.y}px, rgba(45, 140, 240, 0.05), transparent 80%)`
-        }}
-      />
-      
-      <div style={styles.scanlines} />
-      
-      <div style={styles.terminal}>
-        {terminalLines.map((line, i) => (
-          <div key={i} style={styles.terminalLine}>
-            <span style={styles.prompt}>{(typeof line === 'string' && line.startsWith('$')) ? '' : ''}</span>
-            {line}
-          </div>
+    <div className="root-container">
+      {/* ── Boot overlay ── */}
+      <AnimatePresence>
+        {booting && (
+          <motion.div
+            className="boot-overlay"
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6, ease: 'easeInOut' }}
+          >
+            <motion.div
+              className="boot-inner"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={springGentle}
+            >
+              <div className="boot-ascii">{BOOT_ASCII}</div>
+              <div className="boot-text">Booting wizli-os... {bootProgress}%</div>
+              <div className="boot-bar">
+                <motion.div
+                  className="boot-bar-fill"
+                  animate={{ width: `${bootProgress}%` }}
+                  transition={{ duration: 0.04, ease: 'linear' }}
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Particles */}
+      <div className="particles">
+        {PARTICLES.map((p, i) => (
+          <div key={i} className="particle" style={{
+            left: p.left,
+            animationDuration: p.duration,
+            animationDelay: p.delay,
+            opacity: p.opacity,
+            width: p.size, height: p.size,
+          }} />
         ))}
-        <div style={styles.cursor}>_</div>
       </div>
 
-      <div style={styles.header}>
-        <div style={styles.logo}>
-          <span style={styles.logoText}>wizli</span>
-          <span style={styles.version}>v2.1.4</span>
-        </div>
-        <div style={styles.subtitle}>// SELECT ENVIRONMENT</div>
-      </div>
+      {/* Mouse glow */}
+      <div className="mouse-glow" style={{
+        background: `radial-gradient(600px at ${mousePos.x}px ${mousePos.y}px, rgba(45,140,240,0.07), transparent 80%)`
+      }} />
+      <div className="scanlines" />
 
-      <main style={styles.main}>
-        <div style={styles.buttonContainer}>
-          <button
-            aria-label="Windows"
-            onClick={() => handleNavigation('/windows')}
-            onMouseEnter={() => setHoveredButton('windows')}
-            onMouseLeave={() => setHoveredButton(null)}
-            style={{
-              ...bubbleStyle('#2d8cf0', hoveredButton === 'windows'),
-              animation: 'float 6s ease-in-out infinite'
-            }}
+      {/* Background terminal */}
+      {!booting && (
+        <motion.div
+          className="bg-terminal"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 0.3, y: 0 }}
+          transition={{ duration: 1, delay: 0.2, ease: 'easeOut' }}
+        >
+          {termLines.map((line, i) => (
+            <motion.div
+              key={i}
+              className="term-line"
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3, delay: i * 0.06 }}
+            >
+              {line.startsWith('$')
+                ? <><span className="term-prompt">$</span>{line.slice(1)}</>
+                : line}
+            </motion.div>
+          ))}
+          <span className="term-cursor">_</span>
+        </motion.div>
+      )}
+
+      {/* Header */}
+      {!booting && (
+        <motion.div
+          className="header"
+          initial={{ opacity: 0, y: 30, scale: 0.92 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ ...springGentle, delay: 0.1 }}
+        >
+          <div className="logo-row">
+            <motion.h1
+              className="logo-text"
+              initial={{ opacity: 0, scale: 0.8, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ ...springBouncy, delay: 0.15 }}
+            >
+              wizli
+            </motion.h1>
+            <motion.span
+              className="version"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+            >
+              v2.1.4
+            </motion.span>
+          </div>
+          <motion.div
+            className="subtitle"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.35 }}
           >
-            <div style={styles.icon}>⊞</div>
-            <div style={styles.buttonText}>Windows</div>
-            <div style={styles.subtitle2}>NT Kernel</div>
-            {hoveredButton === 'windows' && (
-              <div style={glowEffect('#2d8cf0')} />
-            )}
-          </button>
+            // SELECT ENVIRONMENT
+          </motion.div>
+        </motion.div>
+      )}
 
-          <div style={styles.divider}>
-            <div style={styles.dividerLine} />
-            <div style={styles.dividerText}>OR</div>
-            <div style={styles.dividerLine} />
+      {/* Bubbles */}
+      {!booting && (
+        <main className="main-content">
+          <div className="bubble-row">
+            {envs.map((env, idx) => (
+              <React.Fragment key={env.id}>
+                {idx > 0 && (
+                  <motion.div
+                    className="divider"
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4, delay: 0.5 + idx * 0.1 }}
+                  >
+                    <div className="divider-line" />
+                    <div className="divider-text">OR</div>
+                    <div className="divider-line" />
+                  </motion.div>
+                )}
+                <motion.button
+                  className={`bubble ${navigating === env.id ? 'selected' : ''} ${navigating && navigating !== env.id ? 'dimmed' : ''}`}
+                  aria-label={`${env.label} — ${env.sub}`}
+                  onClick={() => navigate(env.path, env.id)}
+                  onMouseEnter={() => onHover(env.id)}
+                  onMouseLeave={() => onHover(null)}
+                  onFocus={() => onHover(env.id)}
+                  onBlur={() => onHover(null)}
+                  style={{ '--bubble-color': env.color } as React.CSSProperties}
+                  initial={{ opacity: 0, y: 80, scale: 0.5 }}
+                  animate={
+                    navigating === env.id
+                      ? { opacity: 1, y: 0, scale: 1.25 }
+                      : navigating && navigating !== env.id
+                      ? { opacity: 0.12, y: 0, scale: 0.85 }
+                      : { opacity: 1, y: 0, scale: 1 }
+                  }
+                  transition={
+                    navigating
+                      ? { ...springGentle, delay: 0 }
+                      : { ...springBouncy, delay: 0.3 + idx * 0.15 }
+                  }
+                  whileHover={
+                    reducedMotion || navigating
+                      ? {}
+                      : { scale: 1.12, y: -8, transition: springBouncy }
+                  }
+                  whileTap={navigating ? {} : { scale: 0.95, transition: { duration: 0.1 } }}
+                >
+                  <motion.div
+                    className="bubble-icon-wrap"
+                    animate={
+                      hovered === env.id && !navigating
+                        ? { scale: 1.15, y: -3 }
+                        : { scale: 1, y: 0 }
+                    }
+                    transition={springBouncy}
+                  >
+                    <env.Icon className="bubble-icon" />
+                  </motion.div>
+                  <div className="bubble-label">{env.label}</div>
+                  <div className="bubble-sub">{env.sub}</div>
+                  <motion.div
+                    className="bubble-ring"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+                    style={{ opacity: hovered === env.id ? 1 : 0 }}
+                  />
+                  <motion.div
+                    className="bubble-glow"
+                    animate={{
+                      opacity: navigating === env.id ? 0.5 : hovered === env.id ? 0.25 : 0,
+                      scale: navigating === env.id ? 1.5 : 1,
+                    }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </motion.button>
+              </React.Fragment>
+            ))}
           </div>
 
-          <button
-            aria-label="Linux"
-            onClick={() => handleNavigation('/terminal')}
-            onMouseEnter={() => setHoveredButton('linux')}
-            onMouseLeave={() => setHoveredButton(null)}
-            style={{
-              ...bubbleStyle('#8be04b', hoveredButton === 'linux'),
-              animation: 'float 6s ease-in-out infinite 3s'
-            }}
+          <motion.div
+            className="sys-info"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.9, ease: 'easeOut' }}
           >
-            <div style={styles.icon}>$</div>
-            <div style={styles.buttonText}>Linux</div>
-            <div style={styles.subtitle2}>GNU/Linux</div>
-            {hoveredButton === 'linux' && (
-              <div style={glowEffect('#8be04b')} />
-            )}
-          </button>
-
-          <div style={styles.divider}>
-            <div style={styles.dividerLine} />
-            <div style={styles.dividerText}>OR</div>
-            <div style={styles.dividerLine} />
-          </div>
-
-          <button
-            aria-label="Resume"
-            onClick={() => handleNavigation('/resume')}
-            onMouseEnter={() => setHoveredButton('resume')}
-            onMouseLeave={() => setHoveredButton(null)}
-            style={{
-              ...bubbleStyle('#f59e0b', hoveredButton === 'resume'),
-              animation: 'float 6s ease-in-out infinite 6s'
-            }}
-          >
-            <div style={styles.icon}>📄</div>
-            <div style={styles.buttonText}>Resume</div>
-            <div style={styles.subtitle2}>Profile</div>
-            {hoveredButton === 'resume' && (
-              <div style={glowEffect('#f59e0b')} />
-            )}
-          </button>
-        </div>
-
-        <div style={styles.systemInfo}>
-          <div style={styles.infoItem}>
-            <span style={styles.infoLabel}>ARCH:</span> x86_64
-          </div>
-          <div style={styles.infoItem}>
-            <span style={styles.infoLabel}>UPTIME:</span> 99.9%
-          </div>
-          <div style={styles.infoItem}>
-            <span style={styles.infoLabel}>STATUS:</span> <span style={styles.statusOnline}>● ONLINE</span>
-          </div>
-        </div>
-      </main>
-
-      <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
-        }
-        
-        @keyframes scan {
-          0% { transform: translateY(-100%); }
-          100% { transform: translateY(100%); }
-        }
-        
-        @keyframes blink {
-          0%, 50% { opacity: 1; }
-          51%, 100% { opacity: 0; }
-        }
-        
-        @keyframes glowPulse {
-          0%, 100% { opacity: 0.3; transform: scale(1); }
-          50% { opacity: 0.6; transform: scale(1.05); }
-        }
-      `}</style>
+            <span><span className="info-label">ARCH:</span> x86_64</span>
+            <span><span className="info-label">UPTIME:</span> 99.9%</span>
+            {clock && <span><span className="info-label">TIME:</span> {clock}</span>}
+            <span><span className="info-label">STATUS:</span> <span className="status-on">● ONLINE</span></span>
+          </motion.div>
+        </main>
+      )}
     </div>
   );
 }
-
-const bubbleStyle = (bg: string, isHovered: boolean): React.CSSProperties => ({
-  position: 'relative' as const,
-  width: 260,
-  height: 260,
-  borderRadius: 999,
-  border: '2px solid rgba(255,255,255,0.08)',
-  display: 'flex' as const,
-  flexDirection: 'column' as const,
-  alignItems: 'center' as const,
-  justifyContent: 'center' as const,
-  gap: 8,
-  background: `radial-gradient(circle at 30% 20%, rgba(255,255,255,0.12), transparent 70%), ${bg}`,
-  color: '#071018',
-  cursor: 'pointer',
-  boxShadow: isHovered
-    ? `0 12px 40px rgba(0,0,0,0.7), inset 0 -6px 20px rgba(0,0,0,0.3), 0 0 40px ${bg}40`
-    : '0 8px 30px rgba(0,0,0,0.6), inset 0 -6px 20px rgba(0,0,0,0.2)',
-  transform: isHovered ? 'scale(1.05)' : 'scale(1)',
-  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-  overflow: 'hidden' as const,
-});
-
-const styles: { [key: string]: React.CSSProperties } = {
-  container: {
-    position: 'relative',
-    height: '100vh',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: 'linear-gradient(180deg, #07070a 0%, #0f1724 50%, #0a1420 100%)',
-    fontFamily: '"JetBrains Mono", "Fira Code", "Courier New", monospace',
-    overflow: 'hidden',
-  },
-  gradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    pointerEvents: 'none',
-    transition: 'background 0.1s',
-  },
-  scanlines: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.01) 2px, rgba(255,255,255,0.01) 4px)',
-    pointerEvents: 'none',
-    opacity: 0.3,
-  },
-  terminal: {
-    position: 'absolute',
-    top: 20,
-    left: 20,
-    fontFamily: 'monospace',
-    fontSize: 11,
-    color: '#4ade80',
-    lineHeight: 1.6,
-    opacity: 0.4,
-    maxWidth: 400,
-  },
-  terminalLine: {
-    marginBottom: 2,
-  },
-  prompt: {
-    color: '#2d8cf0',
-    marginRight: 8,
-  },
-  cursor: {
-    display: 'inline-block',
-    animation: 'blink 1s infinite',
-    color: '#4ade80',
-  },
-  header: {
-    position: 'absolute',
-    top: '15%',
-    textAlign: 'center',
-  },
-  logo: {
-    display: 'flex',
-    alignItems: 'baseline',
-    gap: 12,
-    marginBottom: 8,
-  },
-  logoText: {
-    fontSize: 48,
-    fontWeight: 700,
-    background: 'linear-gradient(135deg, #2d8cf0 0%, #8be04b 100%)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    letterSpacing: -2,
-  },
-  version: {
-    fontSize: 14,
-    color: '#6b7280',
-    fontWeight: 400,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: '#6b7280',
-    letterSpacing: 3,
-    fontWeight: 500,
-  },
-  main: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 40,
-    zIndex: 1,
-  },
-  buttonContainer: {
-    display: 'flex',
-    gap: 60,
-    alignItems: 'center',
-  },
-  icon: {
-    fontSize: 48,
-    marginBottom: 8,
-    opacity: 0.9,
-  },
-  buttonText: {
-    fontSize: 26,
-    fontWeight: 700,
-    letterSpacing: -0.5,
-  },
-  subtitle2: {
-    fontSize: 11,
-    opacity: 0.7,
-    fontWeight: 400,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-  },
-  divider: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 16,
-    color: '#374151',
-  },
-  dividerLine: {
-    width: 40,
-    height: 1,
-    background: 'linear-gradient(90deg, transparent, #374151, transparent)',
-  },
-  dividerText: {
-    fontSize: 11,
-    fontWeight: 600,
-    letterSpacing: 2,
-  },
-  systemInfo: {
-    display: 'flex',
-    gap: 32,
-    fontSize: 11,
-    color: '#6b7280',
-    fontFamily: 'monospace',
-  },
-  infoItem: {
-    display: 'flex',
-    gap: 6,
-  },
-  infoLabel: {
-    color: '#4ade80',
-    fontWeight: 600,
-  },
-  statusOnline: {
-    color: '#4ade80',
-  },
-};
-
-// helper to render a pulsing glow for hovered bubbles
-const glowEffect = (color: string): React.CSSProperties => ({
-  position: 'absolute',
-  inset: 0,
-  borderRadius: '50%',
-  boxShadow: `0 0 80px ${color}`,
-  opacity: 0.28,
-  animation: 'glowPulse 2.5s ease-in-out infinite',
-  pointerEvents: 'none',
-});

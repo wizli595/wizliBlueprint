@@ -1,0 +1,157 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+.root-container {
+  position: relative;
+  height: 100vh; height: 100dvh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: linear-gradient(180deg, #060609 0%, #0d1520 50%, #09111a 100%);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  overflow: hidden; color: #e2e8f0;
+}
+
+.mouse-glow { position: absolute; inset: 0; pointer-events: none; transition: background 0.15s; }
+.scanlines {
+  position: absolute; inset: 0; pointer-events: none; opacity: 0.4;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.008) 2px, rgba(255,255,255,0.008) 4px);
+}
+
+/* Particles */
+.particles { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.particle {
+  position: absolute; bottom: -4px;
+  background: #4ade80; border-radius: 50%;
+  animation: rise linear infinite;
+}
+@keyframes rise {
+  0%   { transform: translateY(0) translateX(0); opacity: 0; }
+  10%  { opacity: 0.3; }
+  90%  { opacity: 0.1; }
+  100% { transform: translateY(-100vh) translateX(20px); opacity: 0; }
+}
+
+/* Terminal */
+.bg-terminal {
+  position: absolute; top: 24px; left: 24px;
+  font-size: 11px; color: #4ade80; line-height: 1.6; max-width: 420px;
+}
+.term-line { margin-bottom: 2px; }
+.term-prompt { color: #2d8cf0; font-weight: 700; }
+.term-cursor { display: inline-block; animation: blink 1s step-end infinite; color: #4ade80; }
+
+/* Header */
+.header { position: absolute; top: 14%; text-align: center; z-index: 2; }
+.logo-row { display: flex; align-items: baseline; gap: 12px; justify-content: center; margin-bottom: 8px; }
+.logo-text {
+  font-size: 56px; font-weight: 700; letter-spacing: -3px; margin: 0;
+  background: linear-gradient(135deg, #2d8cf0 0%, #8be04b 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.version { font-size: 13px; color: #4b5563; font-weight: 400; }
+.subtitle { font-size: 12px; color: #4b5563; letter-spacing: 4px; font-weight: 500; text-transform: uppercase; }
+
+/* Main */
+.main-content { display: flex; flex-direction: column; align-items: center; gap: 40px; z-index: 2; }
+.bubble-row { display: flex; gap: 40px; align-items: center; }
+
+.divider { display: flex; align-items: center; gap: 14px; color: #374151; }
+.divider-line { width: 32px; height: 1px; background: linear-gradient(90deg, transparent, #374151, transparent); }
+.divider-text { font-size: 10px; font-weight: 600; letter-spacing: 3px; }
+
+/* Bubble */
+.bubble {
+  position: relative;
+  width: 220px; height: 220px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.06);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  background: radial-gradient(circle at 30% 25%, rgba(255,255,255,0.1), transparent 70%), var(--bubble-color);
+  color: #071018; cursor: pointer;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 -4px 16px rgba(0,0,0,0.2);
+  outline: none; font-family: inherit;
+}
+.bubble:focus-visible {
+  border-color: rgba(255,255,255,0.4);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 3px rgba(255,255,255,0.25);
+}
+.bubble.selected {
+  box-shadow: 0 0 100px var(--bubble-color), 0 0 200px color-mix(in srgb, var(--bubble-color) 40%, transparent);
+  border-color: rgba(255,255,255,0.5);
+  z-index: 10;
+}
+.bubble.dimmed { pointer-events: none; }
+
+.bubble-icon-wrap { display: flex; align-items: center; justify-content: center; }
+.bubble-icon { font-size: 42px; opacity: 0.9; }
+.bubble-label { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+.bubble-sub { font-size: 10px; opacity: 0.6; font-weight: 400; letter-spacing: 1.5px; text-transform: uppercase; }
+
+.bubble-ring {
+  position: absolute; inset: -6px; border-radius: 50%;
+  border: 1px dashed rgba(255,255,255,0.12);
+  pointer-events: none; transition: opacity 0.3s ease;
+}
+.bubble-glow {
+  position: absolute; inset: -10px; border-radius: 50%;
+  background: radial-gradient(circle, var(--bubble-color), transparent 70%);
+  pointer-events: none; filter: blur(20px);
+}
+
+/* System info */
+.sys-info { display: flex; gap: 28px; font-size: 11px; color: #6b7280; }
+.info-label { color: #4ade80; font-weight: 600; }
+.status-on { color: #4ade80; animation: pulse 2s ease-in-out infinite; }
+
+/* Boot overlay */
+.boot-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  background: #060609;
+}
+.boot-inner { text-align: center; }
+.boot-ascii {
+  font-family: 'JetBrains Mono', monospace;
+  color: #ffd66b; white-space: pre; line-height: 1.15;
+  font-size: clamp(8px, 1.6vw + 4px, 14px);
+}
+.boot-text {
+  font-family: 'JetBrains Mono', monospace;
+  color: #4ade80; font-size: 13px; margin-top: 16px;
+}
+.boot-bar {
+  width: 240px; height: 3px; margin: 10px auto 0;
+  background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden;
+}
+.boot-bar-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, #ffd66b, #ff8a00);
+}
+
+@keyframes blink { 0%, 50% { opacity: 1; } 50.1%, 100% { opacity: 0; } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .particle { animation: none; display: none; }
+  .term-cursor, .status-on { animation: none; opacity: 1; }
+}
+
+@media (max-width: 960px) {
+  .bubble-row { flex-direction: column; gap: 20px; }
+  .bubble { width: 180px; height: 180px; }
+  .bubble-icon { font-size: 36px; }
+  .bubble-label { font-size: 20px; }
+  .divider { transform: rotate(90deg); }
+  .header { top: 5%; }
+  .logo-text { font-size: 42px; }
+  .sys-info { gap: 16px; flex-wrap: wrap; justify-content: center; }
+}
+
+@media (max-width: 480px) {
+  .bubble { width: 150px; height: 150px; }
+  .bubble-icon { font-size: 30px; }
+  .bubble-label { font-size: 18px; }
+  .bubble-sub { font-size: 9px; }
+  .logo-text { font-size: 34px; }
+  .subtitle { font-size: 10px; letter-spacing: 2px; }
+  .sys-info { font-size: 10px; gap: 12px; }
+  .bg-terminal { display: none; }
+}
