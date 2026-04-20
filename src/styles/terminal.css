@@ -16,9 +16,6 @@ body {
   margin: 0;
   padding: 0;
   background: var(--bg-deep);
-  overflow: hidden;
-  height: 100vh;
-  height: 100dvh;
 }
 
 /* ── Hide scrollbar but keep scroll ── */

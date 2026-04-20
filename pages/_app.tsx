@@ -4,6 +4,8 @@ import Head from 'next/head'
 import '../src/styles/global.css'
 import '../src/styles/terminal.css'
 import '../src/styles/home.css'
+import '../src/styles/resume.css'
+import '../src/styles/windows.css'
 
 export default function App({ Component, pageProps }: AppProps) {
   const [loading, setLoading] = useState(true)

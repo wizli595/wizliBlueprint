@@ -10,7 +10,7 @@ const playSound = (src: string, vol = 0.4) => {
 const envs = [
   { id: 'windows', label: 'Windows', sub: '3D Canvas', path: '/windows', color: '#2d8cf0', Icon: FaWindows },
   { id: 'linux', label: 'Linux', sub: 'Terminal', path: '/terminal', color: '#8be04b', Icon: FaLinux },
-  { id: 'resume', label: 'Resume', sub: 'Profile', path: '/terminal', color: '#f59e0b', Icon: FaFileAlt },
+  { id: 'resume', label: 'Resume', sub: 'Profile', path: '/resume', color: '#f59e0b', Icon: FaFileAlt },
 ];
 
 const TERM_LINES = [

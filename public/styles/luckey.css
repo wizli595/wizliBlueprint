@@ -1,11 +1,12 @@
 /* Styles ported from luckeyduckey.github.io/Styles/Main.css */
+/* Responsive-adapted for mobile */
 
 canvas{display:block;width:100%;height:100%}
 
-#MainButton{width:7.5vh;height:7.5vh;position:fixed;left:50vw;top:95vh;translate:-50% -50%;color:white;font-size:3vh;text-align:center;background-color:black;border:1px solid rgb(100,100,100);border-radius:50%;transition:font-size 0.15s ease, transform 0.25s ease;cursor:pointer}
+#MainButton{width:7.5vh;height:7.5vh;position:fixed;left:50vw;top:95vh;top:95dvh;translate:-50% -50%;color:white;font-size:3vh;text-align:center;background-color:black;border:1px solid rgb(100,100,100);border-radius:50%;transition:font-size 0.15s ease, transform 0.25s ease;cursor:pointer;z-index:20}
 #MainButton:hover{font-size:4vh}
 
-#MainDiv{width:100vw;height:100vh;position:fixed;top:0;left:0;overflow:hidden;background-color:rgb(26,26,26);transition:transform 0.5s ease-in-out;transform:translateY(0%)}
+#MainDiv{width:100vw;height:100vh;height:100dvh;position:fixed;top:0;left:0;overflow:hidden;background-color:rgb(26,26,26);transition:transform 0.5s ease-in-out;transform:translateY(0%)}
 #MainDiv.hidden{transform:translateY(100%)}
 
 #LeftPanel{width:50vh;height:100%;left:calc(50vw - 50vh);position:absolute;margin-top:10vh;pointer-events:none}
@@ -37,3 +38,24 @@ p{font-size:1.6vh;margin:0;color:gray;line-height:2.5vh;pointer-events:auto}
 .Project:hover{background-color:rgba(255,255,255,0.05)}
 .Project p{user-select:none;font-size:1.4vh;color:gray}
 .Separator{flex-grow:1;border-bottom:1px solid gray;margin:0 0.75vh 0.75em 0.75vh}
+
+/* ── Responsive overrides for Modern state panels ── */
+@media (max-width: 768px) {
+  #LeftPanel { display: none; }
+  #RightPanel {
+    width: 100%; left: 0;
+    padding: 12vh 20px 0 20px;
+  }
+  h1 { font-size: 4vh; }
+  h2 { font-size: 1.8vh; }
+  p { font-size: 1.5vh; line-height: 2.2vh; }
+  #MainButton { width: 6vh; height: 6vh; font-size: 2.5vh; }
+  .NavContainer { display: none; }
+  #SocialsContainer { top: auto; bottom: 3vh; transform: none; }
+}
+
+@media (max-width: 480px) {
+  #RightPanel { padding: 10vh 16px 0 16px; }
+  h1 { font-size: 3.5vh; }
+  #MainButton { width: 5vh; height: 5vh; font-size: 2vh; }
+}
