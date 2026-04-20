@@ -11,6 +11,8 @@ let Blinker = {Index: 0, Time: Date.now() * 0.001};
 
 // Current directory
 let Directory = "C:/Users/guest";
+// Length of the root prefix for path slicing
+const ROOT_PREFIX_LEN = "C:/Users/guest".length;
 
 // Stores weather to render plasma or normal terminal
 let DisplayPlasma = false;
@@ -38,7 +40,7 @@ function GetText()
         {
             if ((Date.now() * 0.001 - Blinker.Time) % 1 < 0.5) // Show blinker
             {
-                FinalText += `${Directory}> ${InputText.slice(0, Blinker.Index)}█${InputText.slice(Blinker.Index + 1, InputText.length)}`;
+                FinalText += `${Directory}> ${InputText.slice(0, Blinker.Index)}\u2588${InputText.slice(Blinker.Index + 1, InputText.length)}`;
             }
 
             else // Dont show blinker
@@ -59,7 +61,6 @@ function GetText()
 // Function to handle key press and text input
 function KeyPressed(key)
 {
-    console.log("KeyPressed ->", key);
     if (DisplayPlasma)
     {
         if (key === "Escape")
@@ -72,20 +73,19 @@ function KeyPressed(key)
     {
         let LinesCount = OutputsText.split("\n").length;
 
-        if (key.length === 1 && InputText.length + Directory.length + 3 < 55) // Add character
+        // Add character — allow up to 120 chars total (text wraps in the 3D renderer)
+        if (key.length === 1 && InputText.length < 120)
         {
-            InputText = InputText.slice(0, Blinker.Index) + key.toLowerCase() + InputText.slice(Blinker.Index, InputText.length);
-            console.log("InputText after add ->", InputText);
-            Blinker = {Index: Blinker.Index + 1, Time: Date.now() * 0.001}; // Update blinker pos and reset its time
-            if (ScrollOffset < LinesCount - 30) {ScrollOffset = Math.max(0, LinesCount - 30);} // Reset the scroll if off screen
+            InputText = InputText.slice(0, Blinker.Index) + key + InputText.slice(Blinker.Index, InputText.length);
+            Blinker = {Index: Blinker.Index + 1, Time: Date.now() * 0.001};
+            if (ScrollOffset < LinesCount - 30) {ScrollOffset = Math.max(0, LinesCount - 30);}
         }
-        
+
         else if (key === "Backspace" && InputText && Blinker.Index > 0) // Remove character
         {
             InputText = InputText.slice(0, Blinker.Index - 1) + InputText.slice(Blinker.Index, InputText.length);
-            console.log("InputText after backspace ->", InputText);
-            Blinker = {Index: Blinker.Index - 1, Time: Date.now() * 0.001}; // Update blinker pos and reset its time
-            if (ScrollOffset < LinesCount - 30) {ScrollOffset = Math.max(0, LinesCount - 30);} // Reset the scroll if off screen
+            Blinker = {Index: Blinker.Index - 1, Time: Date.now() * 0.001};
+            if (ScrollOffset < LinesCount - 30) {ScrollOffset = Math.max(0, LinesCount - 30);}
         }
 
         else if (key === "ArrowLeft") // Move blinker left
@@ -110,10 +110,9 @@ function KeyPressed(key)
 
         else if (key === "Tab") // Auto complete
         {
-            AutoComplete(); // Complete input text
-            console.log("InputText after autocomplete ->", InputText);
-            Blinker = {Index: InputText.length, Time: Date.now() * 0.001}; // Update blinker pos and reset its time
-            if (ScrollOffset < LinesCount - 30) {ScrollOffset = Math.max(0, LinesCount - 30);} // Reset the scroll if off screen
+            AutoComplete();
+            Blinker = {Index: InputText.length, Time: Date.now() * 0.001};
+            if (ScrollOffset < LinesCount - 30) {ScrollOffset = Math.max(0, LinesCount - 30);}
         }
 
         else if (key === "Enter") // Submit text
@@ -135,15 +134,20 @@ function BootSequence()
     OutputsText = "";
     let LoadingChars = ["-", "\\", "|", "/"];
 
-    if (Time > 0.1) {OutputsText += "██╗    ██╗██╗███████╗██╗     ██╗\n";}
-    if (Time > 0.2) {OutputsText += "██║    ██║██║╚══███╔╝██║     ██║\n";}
-    if (Time > 0.3) {OutputsText += "██║ █╗ ██║██║  ███╔╝ ██║     ██║\n";}
-    if (Time > 0.4) {OutputsText += "██║███╗██║██║ ███╔╝  ██║     ██║\n";}
-    if (Time > 0.5) {OutputsText += "╚███╔███╔╝██║███████╗███████╗██║\n";}
-    if (Time > 0.6) {OutputsText += " ╚══╝╚══╝ ╚═╝╚══════╝╚══════╝╚═╝\n\n\n";}
+    if (Time > 0.1) {OutputsText += "\u2588\u2588\u2557    \u2588\u2588\u2557\u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2557     \u2588\u2588\u2557\n";}
+    if (Time > 0.2) {OutputsText += "\u2588\u2588\u2551    \u2588\u2588\u2551\u2588\u2588\u2551\u255a\u2550\u2550\u2588\u2588\u2588\u2554\u255d\u2588\u2588\u2551     \u2588\u2588\u2551\n";}
+    if (Time > 0.3) {OutputsText += "\u2588\u2588\u2551 \u2588\u2557 \u2588\u2588\u2551\u2588\u2588\u2551  \u2588\u2588\u2588\u2554\u255d \u2588\u2588\u2551     \u2588\u2588\u2551\n";}
+    if (Time > 0.4) {OutputsText += "\u2588\u2588\u2551\u2588\u2588\u2588\u2557\u2588\u2588\u2551\u2588\u2588\u2551 \u2588\u2588\u2588\u2554\u255d  \u2588\u2588\u2551     \u2588\u2588\u2551\n";}
+    if (Time > 0.5) {OutputsText += "\u255a\u2588\u2588\u2588\u2554\u2588\u2588\u2588\u2554\u255d\u2588\u2588\u2551\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2551\n";}
+    if (Time > 0.6) {OutputsText += " \u255a\u2550\u2550\u255d\u255a\u2550\u2550\u255d \u255a\u2550\u255d\u255a\u2550\u2550\u2550\u2550\u2550\u2550\u255d\u255a\u2550\u2550\u2550\u2550\u2550\u2550\u255d\u255a\u2550\u255d\n\n\n";}
     if (Time > 1.1) {OutputsText += "Welcome to WIZLI-OS 2.9.0 x86_64\n";}
     if (Time > 1.2) {OutputsText += "Type 'help' to list available commands\n\n\n";}
-    if (Time > 1.7) {OutputsText += `Loading ${LoadingChars[Math.ceil((Math.min(3.7, Time) % 0.4) / 0.1) - 1]} ${Math.ceil(Math.min(100, (Time - 1.7) / 0.02))}%\n`;}
+    if (Time > 1.7) {
+        // Safe spinner index: clamp to 0..3
+        var spinIdx = Math.floor((Time * 10) % 4);
+        var pct = Math.ceil(Math.min(100, (Time - 1.7) / 0.02));
+        OutputsText += "Loading " + LoadingChars[spinIdx] + " " + pct + "%\n";
+    }
     if (Time > 3.7) {OutputsText += ".\n";}
     if (Time > 3.8) {OutputsText += ".\n";}
     if (Time > 3.9) {OutputsText += ".\n";}
@@ -154,12 +158,12 @@ function BootSequence()
 
 // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // //
 
-// File system structure (unchanged)
+// File system structure
 const FileSystem = {
     "root": {type: "directory", contents: {
 
         "projects": {type: "directory", contents: {
-            "projects.txt": {type: "file", content: "Below are some of the projects I have developed over\nmy 6+ years of coding. This is just a small selection\nof the many projects I've worked on, with several\nothers not making the list. Please note that some of\nthese projects are unfinished—either because I lacked\nthe necessary skills at the time or simply moved on to\nmore interesting challenges. However, rest assured I\nplan to revisit and polish these projects in the future\nimproving their code with my current level of expertise."},
+            "projects.txt": {type: "file", content: "Below are some of the projects I have developed over\nmy 6+ years of coding. This is just a small selection\nof the many projects I've worked on, with several\nothers not making the list. Please note that some of\nthese projects are unfinished\u2014either because I lacked\nthe necessary skills at the time or simply moved on to\nmore interesting challenges. However, rest assured I\nplan to revisit and polish these projects in the future\nimproving their code with my current level of expertise."},
             "lighting_engine.lnk": {type: "link", content: "https://github.com/LuckeyDuckey/Pygame_Lighting_Engine"},
             "wakeword_engine.lnk": {type: "link", content: "https://github.com/LuckeyDuckey/Python-Wake-Word-Engine"},
             "square_game_halloween.lnk": {type: "link", content: "https://github.com/LuckeyDuckey/Square-Game-Halloween"},
@@ -168,8 +172,8 @@ const FileSystem = {
             "jarvis.lnk": {type: "link", content: "https://github.com/LuckeyDuckey/Jarvis"},
         }},
 
-        "about.txt": {type: "file", content: "I’m an aspiring software developer with a passion\nfor exploring the vast possibilities of programming.\nI’ve been coding since I was 12, starting with small\ngames in Python and evolving into a diverse range of\nprojects. Over the years, I’ve delved into AI,\nmachine learning, graphics programming, cybersecurity\nand web development. My experience spans from creating\nvirtual assistants and VR applications to developing\nshaders and procedurally generated visuals. I’m driven\nby a love for technology and a desire to learn, create\nand solve complex problems. I’m proficient in Python\nC++, JavaScript, and C#, with Python being my\nstrongest language."},
-        "experience.txt": {type: "file", content: "Error 404 not found. That's right I have no\nprofessional in industry experience, however I still\nbring over 6 years of hands-on experience in coding\nand software development from personal projects and\nself-driven learning. I’ve tackled a wide range of\nchallenges, from developing AI-powered virtual\nassistants and machine learning models to creating\ngraphics and VR applications. My projects have allowed\nme to build strong skills in Python, C++, JavaScript\nand C#, and I’ve gained a solid foundation in problem\nsolving, collaboration, and adaptability. I’m eager\nto apply my knowledge and passion for technology in\na professional setting, where I can continue to learn\nand grow as a software developer."},
+        "about.txt": {type: "file", content: "I'm an aspiring software developer with a passion\nfor exploring the vast possibilities of programming.\nI've been coding since I was 12, starting with small\ngames in Python and evolving into a diverse range of\nprojects. Over the years, I've delved into AI,\nmachine learning, graphics programming, cybersecurity\nand web development. My experience spans from creating\nvirtual assistants and VR applications to developing\nshaders and procedurally generated visuals. I'm driven\nby a love for technology and a desire to learn, create\nand solve complex problems. I'm proficient in Python\nC++, JavaScript, and C#, with Python being my\nstrongest language."},
+        "experience.txt": {type: "file", content: "Error 404 not found. That's right I have no\nprofessional in industry experience, however I still\nbring over 6 years of hands-on experience in coding\nand software development from personal projects and\nself-driven learning. I've tackled a wide range of\nchallenges, from developing AI-powered virtual\nassistants and machine learning models to creating\ngraphics and VR applications. My projects have allowed\nme to build strong skills in Python, C++, JavaScript\nand C#, and I've gained a solid foundation in problem\nsolving, collaboration, and adaptability. I'm eager\nto apply my knowledge and passion for technology in\na professional setting, where I can continue to learn\nand grow as a software developer."},
         "plasma.exe": {type: "executable", content: "plasma"},
     }},
 };
@@ -178,28 +182,31 @@ function ListFiles()
 {
     // Move to current folder
     let DirectoryContents = FileSystem.root;
-    for (let Dir of Directory.slice(15).split("/").filter(Boolean)) {DirectoryContents = DirectoryContents.contents[Dir];}
+    for (let Dir of Directory.slice(ROOT_PREFIX_LEN).split("/").filter(Boolean)) {DirectoryContents = DirectoryContents.contents[Dir];}
 
     // Print directory being listed
-    OutputsText += `\nC:/../${Directory.split("/").slice(-1)}`;
+    OutputsText += "\nC:/../" + Directory.split("/").slice(-1);
 
     // Print each file
     const Files = Object.keys(DirectoryContents.contents);
-    for (let [Index, File] of Files.entries()) {OutputsText += `\n${Index == Files.length - 1 ? "┗" : "┣"}${File.includes(".") ? "━▷" : "━━━━"} ${File}`;}
+    for (let [Index, File] of Files.entries()) {OutputsText += "\n" + (Index == Files.length - 1 ? "\u2517" : "\u2523") + (File.includes(".") ? "\u2501\u25B7" : "\u2501\u2501\u2501\u2501") + " " + File;}
 
     OutputsText += "\n\n";
 }
 
 function ChangeDirectory(InputDirectory)
 {
-    let CurrentDirectory = Directory.slice(15).split("/").filter(Boolean);
+    // No argument — go to root
+    if (!InputDirectory || InputDirectory === "/") {
+        Directory = "C:/Users/guest";
+        return;
+    }
+
+    let CurrentDirectory = Directory.slice(ROOT_PREFIX_LEN).split("/").filter(Boolean);
 
     // Go back a folder
     if (InputDirectory === "..") {CurrentDirectory.pop();}
-    
-    // Return to root folder
-    else if (InputDirectory === "/") {CurrentDirectory = [];}
-    
+
     // Move to new folder
     else
     {
@@ -210,40 +217,46 @@ function ChangeDirectory(InputDirectory)
         // Add new folder to path
         if (DirectoryContents.contents[InputDirectory] && DirectoryContents.contents[InputDirectory].type === "directory")
         {CurrentDirectory.push(InputDirectory);}
-        
-        // Desired path dousnt exist
-        else {OutputsText += `\ncd: '${InputDirectory}' No such directory\n\n`;return;}
+
+        // Desired path doesn't exist
+        else {OutputsText += "\ncd: '" + InputDirectory + "' No such directory\n\n"; return;}
     }
 
-    Directory = `C:/Users/guest${CurrentDirectory.length ? "/" : ""}${CurrentDirectory.join("/")}`;
+    Directory = "C:/Users/guest" + (CurrentDirectory.length ? "/" : "") + CurrentDirectory.join("/");
 }
 
 function StartFile(InputFile)
 {
+    // No argument provided
+    if (!InputFile) {
+        OutputsText += "\nError: 'start' requires a filename\nUsage: start <filename>\n\n";
+        return;
+    }
+
     // Move to current folder
     let DirectoryContents = FileSystem.root;
-    for (let Dir of Directory.slice(15).split("/").filter(Boolean)) {DirectoryContents = DirectoryContents.contents[Dir];}
+    for (let Dir of Directory.slice(ROOT_PREFIX_LEN).split("/").filter(Boolean)) {DirectoryContents = DirectoryContents.contents[Dir];}
 
     // Perform action based on what file is opened
     if (DirectoryContents.contents[InputFile] && DirectoryContents.contents[InputFile].type === "file")
     {
-        OutputsText += `\n${DirectoryContents.contents[InputFile].content}\n\n`;
+        OutputsText += "\n" + DirectoryContents.contents[InputFile].content + "\n\n";
     }
 
     else if (DirectoryContents.contents[InputFile] && DirectoryContents.contents[InputFile].type === "link")
     {
-        OutputsText += `\nRedirecting to '${DirectoryContents.contents[InputFile].content}'\n\n`;
+        OutputsText += "\nRedirecting to '" + DirectoryContents.contents[InputFile].content + "'\n\n";
         window.open(DirectoryContents.contents[InputFile].content);
     }
 
     else if (DirectoryContents.contents[InputFile] && DirectoryContents.contents[InputFile].type === "executable")
     {
-        OutputsText += `\n'${InputFile}' Started successfully\n\n`;
+        OutputsText += "\n'" + InputFile + "' Started successfully\n\n";
         DisplayPlasma = true;
     }
-    
-    // Selected file dousnt exist
-    else {OutputsText += `\nstart: '${InputFile}' No such file\n\n`;}
+
+    // Selected file doesn't exist
+    else {OutputsText += "\nstart: '" + InputFile + "' No such file\n\n";}
 }
 
 // Modified ExecuteCommand function
@@ -253,34 +266,36 @@ function ExecuteCommand()
 
     if (Command)
     {
-        ComputerBeep.play();
-        ComputerBeep.currentTime = 0;
+        try {
+            ComputerBeep.play();
+            ComputerBeep.currentTime = 0;
+        } catch(e) {}
     }
 
     switch (Command)
     {
         case "ls":
-            if (Arguments.length) {OutputsText += "\nError: 'ls' doesn't accept any arguments\n\n";}
+            if (Arguments.filter(Boolean).length) {OutputsText += "\nError: 'ls' doesn't accept any arguments\n\n";}
             else {ListFiles();}
             break;
 
         case "cd":
-            if (Arguments.length > 1) {OutputsText += "\nError: 'cd' doesn't accept more that one argument\n\n";}
+            if (Arguments.filter(Boolean).length > 1) {OutputsText += "\nError: 'cd' doesn't accept more than one argument\n\n";}
             else {ChangeDirectory(Arguments[0]);}
             break;
 
         case "start":
-            if (Arguments.length > 1) {OutputsText += "\nError: 'start' doesn't accept more that one argument\n\n";}
+            if (Arguments.filter(Boolean).length > 1) {OutputsText += "\nError: 'start' doesn't accept more than one argument\n\n";}
             else {StartFile(Arguments[0]);}
             break;
 
         case "clear":
-            if (Arguments.length) {OutputsText += "\nError: 'clear' doesn't accept any arguments\n\n";}
+            if (Arguments.filter(Boolean).length) {OutputsText += "\nError: 'clear' doesn't accept any arguments\n\n";}
             else {BootSequence();}
             break;
 
         case "help":
-            if (Arguments.length) {OutputsText += "\nError: 'help' doesn't accept any arguments\n\n";}
+            if (Arguments.filter(Boolean).length) {OutputsText += "\nError: 'help' doesn't accept any arguments\n\n";}
             else {OutputsText += "\nPress 'tab' for auto complete and press 'esc' to exit\na program (.exe file)\n\nLS       Lists current directory contents\nCD       Change directory, '..' moves back, '/' to root\nSTART    Opens specified file in current directory\nCLEAR    Clears all previous terminal outputs\n\n";}
             break;
 
@@ -288,33 +303,34 @@ function ExecuteCommand()
             break;
 
         default:
-            OutputsText += `\nCommand not found '${Command}'\n\n`;
+            OutputsText += "\nCommand not found '" + Command + "'\n\n";
     }
 }
-  
+
 // Autocomplete function
 function AutoComplete()
 {
     const [Command, ...Arguments] = InputText.split(" ");
-    const CommandsList = ["ls", "cd", "start", "clear"];
-    
+    const CommandsList = ["ls", "cd", "start", "clear", "help"];
+
     // Auto completing a command
     if (!Arguments.length)
     {
         const CompletededCommand = CommandsList.filter(Element => Element.startsWith(Command));
         if (CompletededCommand.length) {InputText = CompletededCommand[0]};
     }
-  
-    // Auto comepleting a file name
+
+    // Auto completing a file name
     if (["cd", "start"].includes(Command) && Arguments.length < 2)
     {
         // Move to current folder
         let DirectoryContents = FileSystem.root;
-        for (let Dir of Directory.slice(15).split("/").filter(Boolean)) {DirectoryContents = DirectoryContents.contents[Dir];}
+        for (let Dir of Directory.slice(ROOT_PREFIX_LEN).split("/").filter(Boolean)) {DirectoryContents = DirectoryContents.contents[Dir];}
 
         // Possible file names
-        const PossibleCompletions = Object.keys(DirectoryContents.contents).filter(Item => Item.startsWith(Arguments));
-        if (PossibleCompletions.length) {InputText = `${Command} ${PossibleCompletions[0]}`;}
+        var argStr = Arguments.join("") || "";
+        const PossibleCompletions = Object.keys(DirectoryContents.contents).filter(Item => Item.startsWith(argStr));
+        if (PossibleCompletions.length) {InputText = Command + " " + PossibleCompletions[0];}
     }
 }
 
@@ -322,7 +338,7 @@ function AutoComplete()
 
 function GetTextPlasma()
 {
-    const Letters = [" ", "_", "a", "b", "c", "ö", "õ", "ö", "#", "$", "%", "1", "2", "3", "A", "B", "C"];
+    const Letters = [" ", "_", "a", "b", "c", "\u00f6", "\u00f5", "\u00f6", "#", "$", "%", "1", "2", "3", "A", "B", "C"];
     let Text = "";
 
     for (let Row = 1; Row < 31; Row++)
@@ -340,7 +356,7 @@ function GetTextPlasma()
 }
 
 function GetIntensityPlasma(Row, Col)
-{ 
+{
     let Intensity = 0.0;
 
     Intensity += 0.7 * Math.sin(0.5 * Row + Time / 5);

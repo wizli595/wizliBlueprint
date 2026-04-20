@@ -2,22 +2,23 @@ import React from "react";
 
 interface Props {
   onSubmit: (value: string) => void;
-  onTabComplete: (current: string) => void;
+  onTabComplete: (current: string) => string | undefined;
   onHistoryUp: () => string | undefined;
   onHistoryDown: () => string | undefined;
   disabled?: boolean;
+  prompt: string;
 }
 
-const CommandInput: React.FC<Props> = ({ onSubmit, onTabComplete, onHistoryUp, onHistoryDown, disabled }) => {
+const CommandInput: React.FC<Props> = ({ onSubmit, onTabComplete, onHistoryUp, onHistoryDown, disabled, prompt }) => {
   const ref = React.useRef<HTMLInputElement | null>(null);
 
   React.useEffect(() => {
-    ref.current?.focus();
-  }, []);
+    if (!disabled) ref.current?.focus();
+  }, [disabled]);
 
   return (
     <div className="input-row">
-      <span className="prompt">wizli@archlinux:~$</span>
+      <span className="prompt">{prompt}</span>
       <input
         ref={ref}
         id="commandInput"
@@ -34,7 +35,10 @@ const CommandInput: React.FC<Props> = ({ onSubmit, onTabComplete, onHistoryUp, o
             e.preventDefault();
           } else if (e.key === "Tab") {
             e.preventDefault();
-            onTabComplete(ref.current?.value ?? "");
+            const completed = onTabComplete(ref.current?.value ?? "");
+            if (completed !== undefined && ref.current) {
+              ref.current.value = completed;
+            }
           } else if (e.key === "ArrowUp") {
             e.preventDefault();
             const v = onHistoryUp();

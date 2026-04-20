@@ -1,0 +1,315 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root {
+  --fg: #00ff88;
+  --fg-dim: #98ffb8;
+  --accent: #ffd66b;
+  --bg-deep: #050508;
+  --bg-card: #0a0a0f;
+  --border: rgba(255, 255, 255, 0.06);
+  --glow-green: rgba(0, 255, 136, 0.08);
+  --glow-accent: rgba(255, 211, 107, 0.12);
+}
+
+/* ── Base ── */
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-deep);
+  overflow: hidden;
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* ── Hide scrollbar but keep scroll ── */
+.terminal-body::-webkit-scrollbar { display: none; }
+.terminal-body { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Layout ── */
+.terminal-wrapper {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-deep);
+  padding: 24px;
+}
+
+.terminal-centered {
+  width: 100%;
+  max-width: 960px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Terminal Card ── */
+.terminal-card {
+  width: 100%;
+  min-height: 420px;
+  max-height: 85vh;
+  max-height: 85dvh;
+  background: var(--bg-card);
+  color: var(--fg);
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+  font-family: 'JetBrains Mono', 'Roboto Mono', 'Consolas', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.8),
+    0 20px 80px rgba(0, 0, 0, 0.6),
+    0 0 60px rgba(0, 255, 136, 0.02);
+  display: flex;
+  flex-direction: column;
+}
+
+/* subtle scanline overlay */
+.terminal-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    rgba(0, 0, 0, 0) 50%,
+    rgba(0, 0, 0, 0.03) 50%
+  );
+  background-size: 100% 2px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* ── Topbar (traffic lights) ── */
+.terminal-topbar {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.terminal-topbar-title {
+  flex: 1;
+  text-align: center;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.3);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.5px;
+  margin-right: 52px; /* offset for dots width to truly center */
+}
+
+.terminal-dots {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  transition: opacity 0.15s;
+}
+.dot:hover { opacity: 0.8; }
+.dot-red { background: #ff5f56; }
+.dot-yellow { background: #ffbd2e; }
+.dot-green { background: #27c93f; }
+
+/* ── Terminal body (scrollable area) ── */
+.terminal-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Banner ── */
+.banner-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+}
+
+.banner-ascii {
+  white-space: pre;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent);
+  margin: 0;
+  font-size: clamp(8px, 1.8vw + 6px, 16px);
+  letter-spacing: 0.5px;
+  line-height: 1.15;
+  text-shadow:
+    0 0 20px var(--glow-accent),
+    0 0 40px rgba(255, 180, 60, 0.06);
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.banner-sub {
+  color: rgba(255, 255, 255, 0.35);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.banner-info {
+  color: var(--fg-dim);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  opacity: 0.8;
+  line-height: 1.6;
+  margin-top: 4px;
+}
+
+.banner-info .banner-line {
+  margin: 1px 0;
+}
+
+.banner-info strong {
+  color: var(--fg);
+  font-weight: 500;
+}
+
+/* ── Output lines ── */
+.lines {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 2;
+  padding-right: 0;
+}
+
+.typed-line {
+  white-space: pre-wrap;
+  margin-bottom: 4px;
+  color: var(--fg-dim);
+  word-break: break-word;
+}
+
+/* ── Command input ── */
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  z-index: 2;
+  flex-shrink: 0;
+  min-height: 28px;
+}
+
+.prompt {
+  color: var(--fg);
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  white-space: nowrap;
+  text-shadow: 0 0 8px var(--glow-green);
+}
+
+.input-row input {
+  background: none;
+  border: none;
+  color: var(--fg);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  width: 100%;
+  outline: none;
+  caret-color: var(--fg);
+  padding: 0;
+}
+
+input:focus { outline: none; }
+
+/* ── Loader overlay ── */
+.loader-overlay {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.loader-box {
+  max-width: 90%;
+  padding: 24px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.loader-lines {
+  color: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+  white-space: pre;
+  margin-bottom: 16px;
+  font-size: clamp(8px, 1.8vw + 6px, 16px);
+  line-height: 1.15;
+  text-shadow: 0 0 20px var(--glow-accent);
+}
+
+.loader-progress {
+  color: var(--fg);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  text-shadow: 0 0 10px var(--glow-green);
+}
+
+.loader-bar {
+  width: 280px;
+  max-width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 12px auto 0;
+}
+
+.loader-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #ff8a00);
+  border-radius: 2px;
+  transition: width 60ms linear;
+  box-shadow: 0 0 8px rgba(255, 180, 60, 0.4);
+}
+
+/* ── Responsive ── */
+@media (max-width: 700px) {
+  .terminal-wrapper {
+    padding: 8px;
+  }
+  .terminal-card {
+    min-height: 320px;
+    border-radius: 8px;
+  }
+  .terminal-body {
+    padding: 12px 14px;
+  }
+  .banner-ascii {
+    font-size: clamp(6px, 1.5vw + 4px, 12px);
+  }
+  .terminal-topbar-title {
+    display: none;
+  }
+}
+
+@media (max-width: 400px) {
+  .banner-info {
+    font-size: 11px;
+  }
+  .prompt {
+    font-size: 12px;
+  }
+}

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import type { AppProps } from 'next/app'
 import '../src/styles/global.css'
+import '../src/styles/terminal.css'
 
 export default function App({ Component, pageProps }: AppProps) {
   const [loading, setLoading] = useState(true)

@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import Banner from "./Banner";
 import TerminalLines, { Line } from "./TerminalLines";
 import CommandInput from "./CommandInput";
-// default display name (replace with actual name when provided)
-const DISPLAY_NAME = "WIZLI";
+
+const DISPLAY_NAME = "wizli";
 
 const commandsMap: Record<string, string> = {
   help: `Available commands:
@@ -19,7 +19,6 @@ const commandsMap: Record<string, string> = {
   cd           - Change directory (simple simulation)
   tree         - Show a small tree of files
   start        - Open the Windows canvas experience
-  soundcheck   - Run a quick audio playback test
 `,
   about: `I'm abdessalam ouazri — an IT professional passionate about automation, efficient systems, and technology that makes sense.\nI enjoy building things that are both elegant and functional.`,
   skills: `Core skills:\n  CI/CD\n  DevOps\n  Linux\n  Windows Server\n  Virtualization\n  Bare metal servers\n  Basic networking\n  Basic scripting\n  Agile`,
@@ -29,46 +28,48 @@ const commandsMap: Record<string, string> = {
   clear: "CLEAR",
 };
 
-let nextId = 1;
+const playSound = (src: string) => {
+  try {
+    const s = new Audio(src);
+    s.volume = 0.5;
+    s.play().catch(() => {});
+  } catch {}
+};
 
 const Terminal: React.FC = () => {
   const [lines, setLines] = useState<Line[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
-
   const [cwd, setCwd] = useState<string>("~/");
-
-  const terminalRef = useRef<HTMLDivElement | null>(null);
-  const bootSound = useRef(new Audio("/Sounds/ComputerBoot.mp3")).current;
-  const beepSound = useRef(new Audio("/Sounds/ComputerBeep.mp3")).current;
-  const keypressSound = useRef(new Audio("/Sounds/KeyboardPressed.mp3")).current;
-
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
 
+  const nextIdRef = useRef(1);
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+  const typingRef = useRef<number | null>(null);
+
+  const getId = () => nextIdRef.current++;
+
   useEffect(() => {
-    // run loader, play boot sound and animate progress
     let mounted = true;
-    const duration = 2200; // ms
-    const tick = 50;
+    const duration = 2800;
+    const tick = 60;
     const steps = Math.ceil(duration / tick);
     const inc = Math.ceil(100 / steps);
 
-    try { bootSound.play().catch(() => {}); } catch {}
+    playSound("/Sounds/ComputerBoot.mp3");
 
     const interval = setInterval(() => {
       setProgress((p) => {
         const next = Math.min(100, p + inc);
         if (next >= 100) {
           clearInterval(interval);
-          // small delay to show complete
           setTimeout(() => {
             if (!mounted) return;
+            playSound("/Sounds/ComputerBeep.mp3");
             setLoading(false);
-            // now initialize terminal content
-            resetTerminal();
-          }, 220);
+          }, 300);
         }
         return next;
       });
@@ -80,35 +81,33 @@ const Terminal: React.FC = () => {
     };
   }, []);
 
-  const resetTerminal = () => {
-    nextId = 1;
-    setLines([]);
-    setTimeout(() => scrollToBottom(), 50);
-  };
-
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
-      if (terminalRef.current) terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+      if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
     });
-  };
+  }, []);
 
-  const getAsciiBannerHtml = () => {
-    const ascii = `\n ______  ______   ______   __    __   __   __   __   ______   __           \n/\\__  _\\/\\  ___\\ /\\  == \\ /\\ \"-./  \\ \\ /\\ \\ \"-.\\ \\ /\\  __ \\ \\ /\\ \\          \n\\/_/\\ \\ /\\ \\  __\\ \\ \\  __< \\ \\ \\-./\\ \\\\ \\ \\-.  \\\\ \\  __ \\\\ \\ \\____     \n   \\ \\_\\ \\ \\_____\\\\ \\_\\ \\_\\\\ \\_\\ \\ \\"\\_\\\\ \\_\\ \\_\\ \\\\_____\\    \n    \/_/  \/_____/ \/_/ /_/ \/_/  \/_/ \/_/ \/_/ \/_/ \/_/\\/_/ \/_____/    \n ______  ______   ______  ______  ______  ______   __       __   ______    \n/\\  == \\\/\\  __ \\ /\\  == \\\/\\__  _\\/\\  ___\\/\\  __ \\\\ /\\ \\     /\\ \\ /\\  __ \\   \n\\ \\  _-/\\ \\ \/\\ \\\\ \\  __<\\/_/\\ \\ \\\/\\ \\  __\\\\ \\ \\ \\____\\ \\ \\\\ \\ \/\\ \\  \n \\ \\_\\   \\ \\_____\\\\ \\_\\ \\_\\ \\ \\_\\ \\ \\_____\\\\ \\_____\\\\ \\_\\\\ \\_____\\ \n  \/_/    \/_____/ \/_/ /_/  \/_/  \/_/    \/_____/ \/_____/ \/_/ \/_____/ \n                                                                            \n    Welcome to my terminal portfolio!\n    Type 'help' to begin.`;
-    return `<pre class=\"banner-ascii\">${ascii}</pre>`;
-  };
+  function escapeHtml(s: string) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
 
   const typeLine = (text: string, speed = 8) => {
     setIsTyping(true);
-    const outId = nextId++;
+    const outId = getId();
     setLines((s) => [...s, { id: outId, html: "" }]);
     let i = 0;
+    let lastSoundTime = 0;
     const step = () => {
+      i += 1;
       setLines((current) => current.map((l) => (l.id === outId ? { ...l, html: escapeHtml(text.slice(0, i)) } : l)));
       scrollToBottom();
       if (i < text.length) {
-        i += 1;
-        try { keypressSound.play().catch(() => {}); } catch {}
-        setTimeout(step, speed);
+        const now = Date.now();
+        if (now - lastSoundTime > 80) {
+          playSound("/Sounds/KeyboardPressed.mp3");
+          lastSoundTime = now;
+        }
+        typingRef.current = window.setTimeout(step, speed);
       } else {
         setIsTyping(false);
       }
@@ -116,26 +115,26 @@ const Terminal: React.FC = () => {
     step();
   };
 
-  function escapeHtml(s: string) {
-    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  }
-
-  const ZSH_PROMPT = `${DISPLAY_NAME}@archlinux:~$`;
+  const getPrompt = () => `${DISPLAY_NAME}@archlinux:${cwd}$`;
 
   const printOutput = (cmd: string, output?: string) => {
-    // command echo (zsh-style)
-    setLines((s) => [...s, { id: nextId++, html: `<span class=\"prompt\">${ZSH_PROMPT}</span> ${escapeHtml(cmd)}` }]);
+    setLines((s) => [...s, { id: getId(), html: `<span class="prompt">${escapeHtml(getPrompt())}</span> ${escapeHtml(cmd)}` }]);
     if (output === "CLEAR") {
-      resetTerminal();
+      nextIdRef.current = 1;
+      setLines([]);
       return;
     }
-    if (!output) {
-      setLines((s) => [...s, { id: nextId++, html: `Command not found: ${escapeHtml(cmd)}` }]);
+    if (output === undefined) {
+      setLines((s) => [...s, { id: getId(), html: `<span style="color:#ff6b6b">command not found:</span> ${escapeHtml(cmd)}` }]);
+      scrollToBottom();
+      return;
+    }
+    if (output === "") {
       scrollToBottom();
       return;
     }
     if (/<\/?[a-z][\s\S]*>/i.test(output)) {
-      setLines((s) => [...s, { id: nextId++, html: output }]);
+      setLines((s) => [...s, { id: getId(), html: output }]);
       scrollToBottom();
       return;
     }
@@ -147,103 +146,79 @@ const Terminal: React.FC = () => {
     if (!cmd) return;
     setHistory((h) => [...h, cmd]);
     setHistoryIndex(-1);
-    // simple command parsing & handlers
+
     if (cmd === "clear") {
       printOutput(cmd, "CLEAR");
-      try { beepSound.play().catch(() => {}); } catch {}
+      playSound("/Sounds/ComputerBeep.mp3");
       return;
     }
 
     if (cmd === "whoami") {
       printOutput(cmd, DISPLAY_NAME);
-      try { beepSound.play().catch(() => {}); } catch {}
+      playSound("/Sounds/ComputerBeep.mp3");
       return;
     }
 
     if (cmd === "pwd") {
       printOutput(cmd, cwd);
-      try { beepSound.play().catch(() => {}); } catch {}
+      playSound("/Sounds/ComputerBeep.mp3");
       return;
     }
 
     if (cmd === "ls") {
-      // static demo listing
       printOutput(cmd, "README.md\npublic\nsrc\npackage.json");
-      try { beepSound.play().catch(() => {}); } catch {}
+      playSound("/Sounds/ComputerBeep.mp3");
       return;
     }
 
     if (cmd.startsWith("cd ")) {
       const target = cmd.slice(3).trim();
-      // very small simulated filesystem behaviour
-      if (target === "..") {
+      if (target === ".." || target === "/" || target === "~" || target === "~/") {
         setCwd("~/");
-        printOutput(cmd, "");
-      } else if (target === "/" || target === "~/") {
-        setCwd("~/");
-        printOutput(cmd, "");
       } else {
-        setCwd((prev) => (prev === "~/" ? `~/${target}` : `~/${target}`));
-        printOutput(cmd, "");
+        setCwd((prev) => {
+          const base = prev.endsWith("/") ? prev : prev + "/";
+          return base + target;
+        });
       }
-      try { beepSound.play().catch(() => {}); } catch {}
+      printOutput(cmd, "");
+      playSound("/Sounds/ComputerBeep.mp3");
       return;
     }
 
     if (cmd === "tree") {
-      printOutput(cmd, `./\n├─ src/\n├─ public/\n└─ package.json`);
-      try { beepSound.play().catch(() => {}); } catch {}
+      printOutput(cmd, `./\n├── src/\n├── public/\n└── package.json`);
+      playSound("/Sounds/ComputerBeep.mp3");
       return;
     }
 
     if (cmd === "start") {
       printOutput(cmd, "Starting Windows canvas... (opening /windows)");
-      try { beepSound.play().catch(() => {}); } catch {}
-      // navigate user to windows page
+      playSound("/Sounds/ComputerBeep.mp3");
       setTimeout(() => { window.location.href = "/windows"; }, 250);
       return;
     }
 
-    if (cmd === "soundcheck") {
-      printOutput(cmd, "Attempting to play keypress sound...");
-      try {
-        keypressSound.play().then(() => {
-          setTimeout(() => {
-            setLines((s) => [...s, { id: nextId++, html: `Keypress sound played successfully.` }]);
-            scrollToBottom();
-          }, 200);
-        }).catch(() => {
-          setLines((s) => [...s, { id: nextId++, html: `Playback blocked — user interaction required.` }]);
-          scrollToBottom();
-        });
-      } catch {
-        setLines((s) => [...s, { id: nextId++, html: `Playback failed.` }]);
-        scrollToBottom();
-      }
-      return;
-    }
-
-    // fallback to commands map for static outputs
     const val = commandsMap[cmd];
     if (!val) {
       printOutput(cmd, undefined);
-      try { beepSound.play().catch(() => {}); } catch {}
+      playSound("/Sounds/ComputerBeep.mp3");
       return;
     }
-    // handle help multiline mapping
     printOutput(cmd, val);
-    try { beepSound.play().catch(() => {}); } catch {}
+    playSound("/Sounds/ComputerBeep.mp3");
   };
 
   const handleTab = (current: string) => {
-    const matches = Object.keys(commandsMap).filter((c) => c.startsWith(current.trim()));
+    const trimmed = current.trim();
+    if (!trimmed) return;
+    const matches = Object.keys(commandsMap).filter((c) => c.startsWith(trimmed));
     if (matches.length === 1) {
-      // instruct the input to replace value via a small custom event
-      const evt = new CustomEvent("terminal-tab", { detail: matches[0] });
-      window.dispatchEvent(evt);
+      return matches[0];
     } else if (matches.length > 1) {
       printOutput(current, `Possible commands:\n  ${matches.join("\n  ")}`);
     }
+    return undefined;
   };
 
   const historyUp = () => {
@@ -256,34 +231,59 @@ const Terminal: React.FC = () => {
   const historyDown = () => {
     if (history.length === 0) return undefined;
     if (historyIndex === -1) return undefined;
-    const idx = Math.min(history.length - 1, historyIndex + 1);
-    setHistoryIndex(idx === history.length - 1 ? -1 : idx);
-    return idx === -1 ? undefined : history[idx];
+    if (historyIndex >= history.length - 1) {
+      setHistoryIndex(-1);
+      return "";
+    }
+    const idx = historyIndex + 1;
+    setHistoryIndex(idx);
+    return history[idx];
   };
+
+  useEffect(() => {
+    return () => {
+      if (typingRef.current) clearTimeout(typingRef.current);
+    };
+  }, []);
 
   return (
     <div className="terminal-wrapper">
       <div className="terminal-centered">
-        <div className="terminal-card" ref={terminalRef}>
+        <div className="terminal-card">
           <div className="terminal-topbar" aria-hidden>
             <div className="terminal-dots">
               <span className="dot dot-red" />
               <span className="dot dot-yellow" />
               <span className="dot dot-green" />
             </div>
+            <div className="terminal-topbar-title">wizli@archlinux: {cwd}</div>
           </div>
-          <Banner />
-          {loading && (
-            <div className="loader-overlay">
-              <div className="loader-box">
-                <div className="loader-lines">{`██╗    ██╗██╗███████╗██╗     ██╗\n██║    ██║██║╚══███╔╝██║     ██║\n██║ █╗ ██║██║  ███╔╝ ██║     ██║\n██║███╗██║██║ ███╔╝  ██║     ██║\n╚███╔███╔╝██║███████╗███████╗██║\n ╚══╝╚══╝ ╚═╝╚══════╝╚══════╝╚═╝`}</div>
-                <div className="loader-progress">Loading — {progress}%</div>
+          <div className="terminal-body" ref={bodyRef}>
+            {loading ? (
+              <div className="loader-overlay">
+                <div className="loader-box">
+                  <div className="loader-lines">{`██╗    ██╗██╗███████╗██╗     ██╗\n██║    ██║██║╚══███╔╝██║     ██║\n██║ █╗ ██║██║  ███╔╝ ██║     ██║\n██║███╗██║██║ ███╔╝  ██║     ██║\n╚███╔███╔╝██║███████╗███████╗██║\n ╚══╝╚══╝ ╚═╝╚══════╝╚══════╝╚═╝`}</div>
+                  <div className="loader-progress">Booting — {progress}%</div>
+                  <div className="loader-bar">
+                    <div className="loader-bar-fill" style={{ width: `${progress}%` }} />
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
-
-          <TerminalLines lines={lines} />
-          <CommandInput onSubmit={handleSubmit} onTabComplete={handleTab} onHistoryUp={historyUp} onHistoryDown={historyDown} disabled={isTyping || loading} />
+            ) : (
+              <>
+                <Banner />
+                <TerminalLines lines={lines} />
+                <CommandInput
+                  onSubmit={handleSubmit}
+                  onTabComplete={handleTab}
+                  onHistoryUp={historyUp}
+                  onHistoryDown={historyDown}
+                  disabled={isTyping}
+                  prompt={getPrompt()}
+                />
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
