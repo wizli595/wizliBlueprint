@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import type { AppProps } from 'next/app'
+import Head from 'next/head'
 import '../src/styles/global.css'
 import '../src/styles/terminal.css'
 import '../src/styles/home.css'
@@ -15,6 +16,9 @@ export default function App({ Component, pageProps }: AppProps) {
 
   return (
     <>
+      <Head>
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+      </Head>
       {loading && (
         <div style={{position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', background: '#000', zIndex: 9999}}>
           <div style={{textAlign: 'center', color: '#ffd36b', fontFamily: 'monospace'}}>
