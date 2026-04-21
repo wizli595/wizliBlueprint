@@ -2,13 +2,13 @@ import Head from 'next/head'
 import Script from 'next/script'
 import { useRouter } from 'next/router'
 
-export default function WindowsPage() {
+export default function PowerShellPage() {
   const router = useRouter()
 
   return (
     <>
       <Head>
-        <title>wizli — Windows (Canvas)</title>
+        <title>wizli — PowerShell (Canvas)</title>
         <link rel="stylesheet" href="/styles/luckey.css" />
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
@@ -107,6 +107,22 @@ export default function WindowsPage() {
             }, 100);
           })();`}
         </Script>
+        {/* Fun message when screen is too small */}
+        <div className="ps-too-small">
+          <div className="ps-prompt">PS C:\Users\wizli&gt; Start-3DExperience</div>
+          <div className="ps-error">
+            <b>Start-3DExperience</b> : Cannot initialize WebGL viewport.<br />
+            Viewport dimensions ({`<`}320 x {`<`}400) are below the minimum<br />
+            required resolution (320 x 400).<br /><br />
+            At line:1 char:1<br />
+            + ~~~~~~~~~~~~~~~~~~~~<br />
+            + CategoryInfo : <b>ViewportTooSmall</b><br />
+            + FullyQualifiedErrorId : <b>ScreenTooTiny</b>
+          </div>
+          <div className="ps-suggestion">
+            Suggestion: Resize your browser window or rotate your device.
+          </div>
+        </div>
       </main>
     </>
   )

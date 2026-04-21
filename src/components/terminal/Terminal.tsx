@@ -195,7 +195,7 @@ const Terminal: React.FC = () => {
     if (cmd === "start") {
       printOutput(cmd, "Starting Windows canvas... (opening /windows)");
       playSound("/Sounds/ComputerBeep.mp3");
-      setTimeout(() => { window.location.href = "/windows"; }, 250);
+      setTimeout(() => { window.location.href = "/powershell"; }, 250);
       return;
     }
 

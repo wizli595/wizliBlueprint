@@ -67,7 +67,7 @@
 /* Mobile menu button */
 .mobile-menu-btn {
   background: none; border: none; color: #9ca3af; cursor: pointer;
-  padding: 6px; display: flex; align-items: center; transition: color 0.2s;
+  padding: 6px; align-items: center; transition: color 0.2s;
 }
 .mobile-menu-btn:hover { color: var(--accent-primary); }
 
